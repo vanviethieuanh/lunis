@@ -3,7 +3,6 @@ mod date;
 mod datetime;
 mod lang;
 mod sexagenary;
-mod time;
 
 use std::io;
 

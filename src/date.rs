@@ -9,7 +9,7 @@ lazy_static! {
     pub static ref YEAR_DAYS: Vec<u32> = {
         let mut days = Vec::with_capacity(YEAR_INFOS.len());
         for year_info in &YEAR_INFOS {
-            days.push(year_into_days(*year_info));
+            days.push(count_days(*year_info));
         }
         days
     };
@@ -121,7 +121,7 @@ pub fn to_chinese_number(n: u32) -> &'static str {
     }
 }
 
-fn year_into_days(year_info: u32) -> u32 {
+fn count_days(year_info: u32) -> u32 {
     let mut r = 12 * 29u32;
 
     r += (year_info & 0xFFF0).count_ones();

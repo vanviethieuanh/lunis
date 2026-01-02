@@ -1,0 +1,75 @@
+.TH LUNIS 1 "2026-01-02" "Lunis CLI" "User Commands"
+.SH NAME
+lunis \- Lunar/sexagenary calendar converter
+
+.SH DESCRIPTION
+Converts a Gregorian date to the Chinese/Vietnamese/Japanese/Korean lunar calendar.
+
+The tool supports two modes:
+
+.TP
+convert
+Reads a date from standard input in \fBRFC 3339\fP format, e.g., `2026-03-02T23:40:33+07:00`. 
+You can pipe input like:
+
+.nf
+$ date -Iseconds | lunis convert -l vi -f "{y-s} {y-b} - {m-s} {m-b} ({m-S}) - {d-s} {d-b} | Giờ {h-b} - {ke} khắc"
+.fi
+
+.TP
+now
+Uses the \fBcurrent system time\fP as input. For example:
+
+.nf
+$ lunis now -l zh -f "{y-s} {y-b} - {m-S} - {d-s} {d-b} | Giờ {h-b} - {ke}"
+.fi
+
+.TP
+Timezone handling
+The tool \fBignores the timezone\fP of the input date. All calculations are based solely on the provided datetime values, without conversion between zones.
+
+.SH USAGE 
+lunis convert|now [OPTIONS]
+
+.SH OPTIONS
+.TP
+-l, --lang <LANG>
+Language for output: vi, zh, ko, jp
+.TP
+-f, --format <FORMAT>
+Format string for output (see below)
+.SH FORMAT STRING
+Your format string supports placeholders:
+
+.TP
+\{y-s\} / \{y-b\} / \{y-y\} / \{y-w\} / \{y-n\}
+Year: stem, branch, yinyang, wuxing, number
+
+.TP
+\{m-s\} / \{m-b\} / \{m-y\} / \{m-w\} / \{m-n\} / \{m-S\}
+Month: stem, branch, yinyang, wuxing, number, string (e.g., "Tháng Giêng", "闰三月")
+
+.TP
+\{d-s\} / \{d-b\} / \{d-y\} / \{d-w\} / \{d-n\}
+Day: stem, branch, yinyang, wuxing, number
+
+.TP
+\{h-s\} / \{h-b\} / \{h-y\} / \{h-w\} / \{h-n\}
+Hour: stem, branch, yinyang, wuxing, number (0–23)
+
+.TP
+\{ke\}
+15-minute ke of the hours (0–7)
+
+.SH EXAMPLES
+Convert a date with Vietnamese output:
+
+.nf
+$ echo "2026-03-02T23:40:33+07:00" | lunis convert -l vi -f "{y-s} {y-b} - {m-s} {m-b} ({m-S}) - {d-s} {d-b} | Giờ {h-b} - {ke} khắc"
+Bính Ngọ - Canh Dần (Tháng Giêng) - Ất Hợi | Giờ Tý - 2 khắc
+.fi
+
+.SH SEE ALSO
+date(1), cal(1)
+.SH AUTHOR
+Văn Viết Hiếu Anh <29355962+vanviethieuanh@users.noreply.github.com>
