@@ -164,6 +164,30 @@ impl Branch {
 
         table[self as usize]
     }
+
+    pub fn get_yinyang(&self) -> YinYang {
+        match self {
+            Branch::Zi | Branch::Yin | Branch::Chen | Branch::Wu | Branch::Shen | Branch::Xu => {
+                YinYang::Yang
+            }
+            Branch::Chou
+            | Branch::Mao
+            | Branch::Si
+            | Branch::Wei
+            | Branch::You
+            | Branch::Hai => YinYang::Yin,
+        }
+    }
+
+    pub fn get_wuxing(&self) -> WuXing {
+        match self {
+            Branch::Zi | Branch::Hai => WuXing::Water,
+            Branch::Yin | Branch::Mao => WuXing::Wood,
+            Branch::Si | Branch::Wu => WuXing::Fire,
+            Branch::Shen | Branch::You => WuXing::Metal,
+            Branch::Chou | Branch::Chen | Branch::Wei | Branch::Xu => WuXing::Earth,
+        }
+    }
 }
 
 impl From<u32> for Stem {
