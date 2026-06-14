@@ -1,0 +1,93 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  build:
+    aliases:
+      - default
+    desc: Build the project
+    cmds:
+      - cargo build
+
+  now:
+    desc: Show current lunar date (default format)
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis now -l vi -f '{y-s} {y-b} - {m-S} - {d-s} {d-b} ngày {d-n}'
+
+  now-waybar:
+    desc: Show current lunar date as Waybar JSON
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis now -o waybar -l vi -f '{y-s} {y-b} - {m-S} - {d-s} {d-b} ngày {d-n}'
+
+  convert:
+    desc: "Convert an RFC3339 date (usage: task convert -- 2026-03-02T00:59:33+07:00)"
+    deps:
+      - build
+    cmds:
+      - |
+        echo "{{.CLI_ARGS}}" | ./target/debug/lunis convert -l vi -f '{y-s} {y-b} - {m-S} - {d-s} {d-b} ngày {d-n}'
+
+  relation:
+    desc: "Check TenGod relation between two dates (usage: task relation -- 2026-03-02T00:00:00+07:00 2026-06-14T00:00:00+07:00)"
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis relation -l vi {{.CLI_ARGS}}
+
+  rel-waybar:
+    desc: Check TenGod relation as Waybar JSON
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis relation -o waybar -l vi {{.CLI_ARGS}}
+
+  pillars:
+    desc: "Show all four pillars with TenGod and hidden stems"
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis relation -l vi --all {{.CLI_ARGS}}
+
+  nayin:
+    desc: "Show NaYin attributes for a target date"
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis relation -l vi --nayin {{.CLI_ARGS}}
+
+  tooltip:
+    desc: Show Waybar JSON with custom tooltip format
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis now -o waybar -l vi --tooltip-format '{y-s} {y-b} ({y-y},{y-w})' -f '{y-s} {y-b}'
+
+  zh:
+    desc: Show current date in Chinese
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis now -l zh -f '{y-s}{y-b}年 {m-S} {d-s}{d-b}日'
+
+  install:
+    desc: Install globally
+    cmds:
+      - cargo install --path .
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - cargo clean
