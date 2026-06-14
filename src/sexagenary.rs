@@ -188,6 +188,24 @@ impl Branch {
             Branch::Chou | Branch::Chen | Branch::Wei | Branch::Xu => WuXing::Earth,
         }
     }
+
+    pub fn get_hidden_stems(&self) -> &[Stem] {
+        use Stem::*;
+        match self {
+            Branch::Zi => &[Gui],
+            Branch::Chou => &[Ji, Xin, Gui],
+            Branch::Yin => &[Jia, Bing, Wu],
+            Branch::Mao => &[Yi],
+            Branch::Chen => &[Wu, Yi, Gui],
+            Branch::Si => &[Bing, Wu, Geng],
+            Branch::Wu => &[Ding, Ji],
+            Branch::Wei => &[Ji, Ding, Yi],
+            Branch::Shen => &[Geng, Ren, Wu],
+            Branch::You => &[Xin],
+            Branch::Xu => &[Wu, Xin, Ding],
+            Branch::Hai => &[Ren, Jia],
+        }
+    }
 }
 
 impl From<u32> for Stem {
@@ -244,11 +262,8 @@ pub enum TenGod {
 }
 
 impl TenGod {
-    pub fn resolve_tengod(master: LunisDateTime, date: LunisDateTime) -> TenGod {
-        let relation = TenGodRelation::resolve_relation(master, date);
-
-        let (_, master_stem, _) = master.get_day();
-        let (_, date_stem, _) = date.get_day();
+    pub fn resolve(master_stem: Stem, date_stem: Stem) -> TenGod {
+        let relation = TenGodRelation::resolve_relation_stems(master_stem, date_stem);
 
         let m = master_stem.get_yinyang();
         let d = date_stem.get_yinyang();
@@ -269,6 +284,13 @@ impl TenGod {
             (TenGodRelation::ControlsMe, true) => TenGod::ZhengGuan,
             (TenGodRelation::ControlsMe, false) => TenGod::QiSha,
         }
+    }
+
+    pub fn resolve_tengod(master: LunisDateTime, date: LunisDateTime) -> TenGod {
+        let (_, master_stem, _) = master.get_day();
+        let (_, date_stem, _) = date.get_day();
+
+        Self::resolve(master_stem, date_stem)
     }
 
     pub fn to_str(self, lang: &LunarLang) -> &'static str {
@@ -366,10 +388,7 @@ pub enum TenGodRelation {
 }
 
 impl TenGodRelation {
-    pub fn resolve_relation(master: LunisDateTime, date: LunisDateTime) -> TenGodRelation {
-        let (_, master_stem, _) = master.get_day();
-        let (_, date_stem, _) = date.get_day();
-
+    pub fn resolve_relation_stems(master_stem: Stem, date_stem: Stem) -> TenGodRelation {
         let m = master_stem.get_wuxing();
         let d = date_stem.get_wuxing();
 
@@ -386,5 +405,12 @@ impl TenGodRelation {
         } else {
             unreachable!("Invalid WuXing relationship");
         }
+    }
+
+    pub fn resolve_relation(master: LunisDateTime, date: LunisDateTime) -> TenGodRelation {
+        let (_, master_stem, _) = master.get_day();
+        let (_, date_stem, _) = date.get_day();
+
+        Self::resolve_relation_stems(master_stem, date_stem)
     }
 }
