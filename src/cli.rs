@@ -22,6 +22,14 @@ pub struct CommonFormatArgs {
         default_value = "{y-s} {y-b} ({y-y},{y-w}) | ({m-n}) {m-s} {m-b} | {d-s} {d-b} | {h-s} {h-b} | ke={ke}"
     )]
     pub format: String,
+
+    /// Output mode
+    #[arg(short, long, value_enum, default_value_t = OutputMode::Default)]
+    pub output: OutputMode,
+
+    /// Format for tooltip (Waybar mode); defaults to a rich format if not set
+    #[arg(long)]
+    pub tooltip_format: Option<String>,
 }
 
 #[derive(Debug, Clone, ValueEnum)]
@@ -31,26 +39,24 @@ pub enum OutputMode {
 }
 
 #[derive(Serialize)]
-struct WaybarOutput {
-    text: String,
-    alt: String,
-    tooltip: String,
+pub struct WaybarOutput {
+    pub text: String,
+    pub alt: String,
+    pub tooltip: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub class: Option<String>,
 }
 
 #[derive(Args, Debug)]
 pub struct RelationArgs {
-    #[arg(short, long)]
-    pub lang: LunarLang,
+    #[command(flatten)]
+    pub fmt: CommonFormatArgs,
 
     /// First date in RFC3339
     pub master: String,
 
     /// Second date in RFC3339
     pub target: String,
-
-    /// Output mode: default waybar
-    #[arg(short, long, value_enum, default_value_t = OutputMode::Default)]
-    pub output: OutputMode,
 }
 
 #[derive(Subcommand)]
