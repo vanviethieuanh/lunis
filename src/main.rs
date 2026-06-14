@@ -7,9 +7,14 @@ mod sexagenary;
 use std::io;
 
 use clap::Parser;
-use cli::{Cli, Commands, OutputMode};
+use cli::{Cli, Commands, OutputMode, Pillar};
 
-use crate::{cli::WaybarOutput, datetime::LunisDateTime, sexagenary::TenGod};
+use crate::{
+    cli::WaybarOutput,
+    datetime::LunisDateTime,
+    lang::LunarLang,
+    sexagenary::{Branch, NaYin, PillarGods, Stem, TenGod},
+};
 
 const DEFAULT_TOOLTIP_FMT: &str =
     "{y-s} {y-b} ({y-y},{y-w}) | ({m-n}) {m-s} {m-b} | {d-s} {d-b} | {h-s} {h-b} | ke={ke}";
@@ -37,6 +42,59 @@ fn print_datetime(r: &LunisDateTime, fmt: &cli::CommonFormatArgs) {
     }
 }
 
+fn get_pillar_data<'a>(dt: &'a LunisDateTime, pillar: &Pillar) -> (u32, Stem, Branch) {
+    match pillar {
+        Pillar::Year => dt.get_year(),
+        Pillar::Month => dt.get_month(),
+        Pillar::Day => dt.get_day(),
+        Pillar::Hour => dt.get_hour(),
+    }
+}
+
+fn format_stem_gods(stem: Stem, god: TenGod, hidden: &[(Stem, TenGod)], lang: &LunarLang) -> String {
+    let stem_name = stem.to_str(lang);
+    let god_name = god.to_str(lang);
+    if hidden.is_empty() {
+        format!("{}: {}", stem_name, god_name)
+    } else {
+        let hidden_parts: Vec<String> = hidden
+            .iter()
+            .map(|(hs, hg)| format!("{}({})", hs.to_str(lang), hg.to_str(lang)))
+            .collect();
+        format!("{}: {} [{}]", stem_name, god_name, hidden_parts.join(", "))
+    }
+}
+
+fn print_pillar_gods(gods: &PillarGods, lang: &LunarLang) {
+    let pillars = [
+        ("Year",  &gods.year),
+        ("Month", &gods.month),
+        ("Day",   &gods.day),
+        ("Hour",  &gods.hour),
+    ];
+    for (label, p) in &pillars {
+        let line = format_stem_gods(p.stem, p.stem_god, &p.hidden_gods, lang);
+        println!("  {:5} ({})", label, line);
+    }
+}
+
+fn print_nayin(gods: &PillarGods, lang: &LunarLang) {
+    let nayins = [
+        ("Year",  gods.year.stem,  gods.year.branch),
+        ("Month", gods.month.stem, gods.month.branch),
+        ("Day",   gods.day.stem,   gods.day.branch),
+        ("Hour",  gods.hour.stem,  gods.hour.branch),
+    ];
+    let parts: Vec<String> = nayins
+        .iter()
+        .map(|(_, s, b)| {
+            let n = NaYin::from_sexagenary(*s, *b);
+            format!("{} ({})", n.to_str(lang), n.element.to_str(lang))
+        })
+        .collect();
+    println!("  Na Yin: {}", parts.join(" | "));
+}
+
 fn main() {
     match Cli::parse().command {
         Commands::Now { fmt } => {
@@ -55,18 +113,56 @@ fn main() {
         Commands::Relation(relation_args) => {
             let master = LunisDateTime::from_rfc3339(relation_args.master.trim()).unwrap();
             let target = LunisDateTime::from_rfc3339(relation_args.target.trim()).unwrap();
+            let lang = &relation_args.fmt.lang;
+            let (_, master_stem, _) = master.get_day();
 
-            let tengod = TenGod::resolve_tengod(master, target);
-            let name = tengod.to_str(&relation_args.fmt.lang);
-            let desc = tengod.describe(&relation_args.fmt.lang);
+            if relation_args.all {
+                let all = TenGod::resolve_all(master, target);
+                print_pillar_gods(&all, lang);
+
+                if relation_args.nayin {
+                    print_nayin(&all, lang);
+                }
+                return;
+            }
+
+            let pillar = &relation_args.pillar;
+            let pillar_data = get_pillar_data(&target, pillar);
+            let pt = TenGod::resolve_pillar(master_stem, pillar_data);
+
+            if relation_args.nayin {
+                let nayin = NaYin::from_sexagenary(pt.stem, pt.branch);
+                let nayin_name = nayin.to_str(lang);
+                let element_name = nayin.element.to_str(lang);
+                let god_name = pt.stem_god.to_str(lang);
+                let god_desc = pt.stem_god.describe(lang);
+                match relation_args.fmt.output {
+                    OutputMode::Default => {
+                        println!("{}: {}  | {} ({}) ({})", god_name, god_desc, nayin_name, element_name, pt.stem.to_str(lang));
+                    }
+                    OutputMode::Waybar => {
+                        let output = WaybarOutput {
+                            text: god_name.to_string(),
+                            alt: god_name.to_string(),
+                            tooltip: format!("{}: {}  | {} ({})", god_name, god_desc, nayin_name, element_name),
+                            class: Some("lunis".to_string()),
+                        };
+                        println!("{}", serde_json::to_string(&output).unwrap());
+                    }
+                }
+                return;
+            }
+
+            let line = format_stem_gods(pt.stem, pt.stem_god, &pt.hidden_gods, lang);
+            let desc = pt.stem_god.describe(lang);
 
             match relation_args.fmt.output {
-                OutputMode::Default => println!("{}: {}", name, desc),
+                OutputMode::Default => println!("{} — {}", line, desc),
                 OutputMode::Waybar => {
                     let output = WaybarOutput {
-                        text: name.to_string(),
-                        alt: name.to_string(),
-                        tooltip: format!("{}: {}", name, desc),
+                        text: pt.stem_god.to_str(lang).to_string(),
+                        alt: pt.stem_god.to_str(lang).to_string(),
+                        tooltip: format!("{} — {}", line, desc),
                         class: Some("lunis".to_string()),
                     };
                     println!("{}", serde_json::to_string(&output).unwrap());

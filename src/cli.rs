@@ -47,6 +47,14 @@ pub struct WaybarOutput {
     pub class: Option<String>,
 }
 
+#[derive(Debug, Clone, ValueEnum)]
+pub enum Pillar {
+    Year,
+    Month,
+    Day,
+    Hour,
+}
+
 #[derive(Args, Debug)]
 pub struct RelationArgs {
     #[command(flatten)]
@@ -57,6 +65,18 @@ pub struct RelationArgs {
 
     /// Second date in RFC3339
     pub target: String,
+
+    /// Target pillar (year, month, day, hour)
+    #[arg(short, long, value_enum, default_value_t = Pillar::Day)]
+    pub pillar: Pillar,
+
+    /// Show all four pillars with hidden stems
+    #[arg(short, long)]
+    pub all: bool,
+
+    /// Show Na Yin attribute for the target date
+    #[arg(long)]
+    pub nayin: bool,
 }
 
 #[derive(Subcommand)]
