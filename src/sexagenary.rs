@@ -377,6 +377,53 @@ impl TenGod {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct PillarTenGod {
+    pub number: u32,
+    pub stem: Stem,
+    pub branch: Branch,
+    pub stem_god: TenGod,
+    pub hidden_gods: Vec<(Stem, TenGod)>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PillarGods {
+    pub year: PillarTenGod,
+    pub month: PillarTenGod,
+    pub day: PillarTenGod,
+    pub hour: PillarTenGod,
+}
+
+impl TenGod {
+    pub fn resolve_pillar(master_stem: Stem, (number, stem, branch): (u32, Stem, Branch)) -> PillarTenGod {
+        let stem_god = Self::resolve(master_stem, stem);
+        let hidden_gods = branch
+            .get_hidden_stems()
+            .iter()
+            .map(|&hs| (hs, Self::resolve(master_stem, hs)))
+            .collect();
+
+        PillarTenGod {
+            number,
+            stem,
+            branch,
+            stem_god,
+            hidden_gods,
+        }
+    }
+
+    pub fn resolve_all(master: LunisDateTime, target: LunisDateTime) -> PillarGods {
+        let (_, master_stem, _) = master.get_day();
+
+        PillarGods {
+            year: Self::resolve_pillar(master_stem, target.get_year()),
+            month: Self::resolve_pillar(master_stem, target.get_month()),
+            day: Self::resolve_pillar(master_stem, target.get_day()),
+            hour: Self::resolve_pillar(master_stem, target.get_hour()),
+        }
+    }
+}
+
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
 pub enum TenGodRelation {
