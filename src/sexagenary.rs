@@ -461,3 +461,80 @@ impl TenGodRelation {
         Self::resolve_relation_stems(master_stem, date_stem)
     }
 }
+
+fn sexagenary_index(stem: Stem, branch: Branch) -> u32 {
+    let s = stem as u32;
+    let b = branch as u32;
+    let q = ((s as i32 - b as i32).rem_euclid(12) / 2) as u32;
+    10 * q + s
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct NaYin {
+    pub element: WuXing,
+    idx: usize,
+}
+
+static NA_YIN_NAMES_VI: &[&str] = &[
+    "Hải Trung Kim", "Lô Trung Hỏa", "Đại Lâm Mộc", "Lộ Bàng Thổ", "Kiếm Phong Kim",
+    "Sơn Đầu Hỏa", "Gian Hạ Thủy", "Thành Tường Thổ", "Bạch Lạp Kim", "Dương Liễu Mộc",
+    "Tuyền Trung Thủy", "Ốc Thượng Thổ", "Tích Lịch Hỏa", "Tùng Bách Mộc", "Trường Lưu Thủy",
+    "Sa Trung Kim", "Sơn Hạ Hỏa", "Bình Địa Mộc", "Bích Thượng Thổ", "Kim Bạc Kim",
+    "Phúc Đăng Hỏa", "Thiên Hà Thủy", "Đại Dịch Thổ", "Thoa Xuyến Kim", "Tang Giá Mộc",
+    "Đại Khê Thủy", "Sa Trung Thổ", "Thiên Thượng Hỏa", "Thạch Lựu Mộc", "Đại Hải Thủy",
+];
+
+static NA_YIN_NAMES_ZH: &[&str] = &[
+    "海中金", "爐中火", "大林木", "路旁土", "劍鋒金",
+    "山頭火", "澗下水", "城牆土", "白蠟金", "楊柳木",
+    "泉中水", "屋上土", "霹靂火", "松柏木", "長流水",
+    "沙中金", "山下火", "平地木", "壁上土", "金箔金",
+    "覆燈火", "天河水", "大驛土", "釵釧金", "桑柘木",
+    "大溪水", "沙中土", "天上火", "石榴木", "大海水",
+];
+
+static NA_YIN_NAMES_KO: &[&str] = &[
+    "해중금", "노중화", "대림목", "로방토", "검봉금",
+    "산두화", "간하수", "성장토", "백랍금", "양류목",
+    "천중수", "옥상토", "벽력화", "송백목", "장류수",
+    "사중금", "산하화", "평지목", "벽상토", "금박금",
+    "복등화", "천하수", "대역토", "시천금", "상자목",
+    "대계수", "사중토", "천상화", "석류목", "대해수",
+];
+
+static NA_YIN_NAMES_JP: &[&str] = &[
+    "かいちゅうきん", "ろちゅうか", "たいりんぼく", "ろぼうど", "けんぽうきん",
+    "さんとうか", "かんかすい", "じょうしょうど", "はくろうきん", "ようりゅうぼく",
+    "せんちゅうすい", "おくじょうど", "へきれきか", "しょうはくぼく", "ちょうりゅうすい",
+    "さちゅうきん", "さんかか", "へいちぼく", "へきじょうど", "きんぱくきん",
+    "ふくとうか", "てんがすい", "たいえきど", "さいせんきん", "そうじゃぼく",
+    "たいけいすい", "さちゅうど", "てんじょうか", "せきりゅうぼく", "たいかいすい",
+];
+
+static NA_YIN_ELEMENTS: &[WuXing] = &[
+    WuXing::Metal, WuXing::Fire,  WuXing::Wood,   WuXing::Earth,  WuXing::Metal,
+    WuXing::Fire,  WuXing::Water, WuXing::Earth,  WuXing::Metal,  WuXing::Wood,
+    WuXing::Water, WuXing::Earth, WuXing::Fire,   WuXing::Wood,   WuXing::Water,
+    WuXing::Metal, WuXing::Fire,  WuXing::Wood,   WuXing::Earth,  WuXing::Metal,
+    WuXing::Fire,  WuXing::Water, WuXing::Earth,  WuXing::Metal,  WuXing::Wood,
+    WuXing::Water, WuXing::Earth, WuXing::Fire,   WuXing::Wood,   WuXing::Water,
+];
+
+impl NaYin {
+    pub fn from_sexagenary(stem: Stem, branch: Branch) -> Self {
+        let idx = sexagenary_index(stem, branch) as usize / 2;
+        NaYin {
+            element: NA_YIN_ELEMENTS[idx],
+            idx,
+        }
+    }
+
+    pub fn to_str(self, lang: &LunarLang) -> &'static str {
+        match lang {
+            LunarLang::Vi => NA_YIN_NAMES_VI[self.idx],
+            LunarLang::Zh => NA_YIN_NAMES_ZH[self.idx],
+            LunarLang::Ko => NA_YIN_NAMES_KO[self.idx],
+            LunarLang::Jp => NA_YIN_NAMES_JP[self.idx],
+        }
+    }
+}
