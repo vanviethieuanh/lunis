@@ -95,4 +95,18 @@ pub enum Commands {
 
     // Check the interraction between 2 days
     Relation(RelationArgs),
+
+    /// Judge if a day is good/bad based on your birth date
+    Judge {
+        #[command(flatten)]
+        fmt: CommonFormatArgs,
+
+        /// Your birth date in RFC3339
+        #[arg(short, long)]
+        born: String,
+
+        /// Target date in RFC3339 (default: now)
+        #[arg(short, long)]
+        target: Option<String>,
+    },
 }

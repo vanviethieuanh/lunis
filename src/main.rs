@@ -1,3 +1,4 @@
+mod auspicious;
 mod cli;
 mod date;
 mod datetime;
@@ -51,7 +52,12 @@ fn get_pillar_data<'a>(dt: &'a LunisDateTime, pillar: &Pillar) -> (u32, Stem, Br
     }
 }
 
-fn format_stem_gods(stem: Stem, god: TenGod, hidden: &[(Stem, TenGod)], lang: &LunarLang) -> String {
+fn format_stem_gods(
+    stem: Stem,
+    god: TenGod,
+    hidden: &[(Stem, TenGod)],
+    lang: &LunarLang,
+) -> String {
     let stem_name = stem.to_str(lang);
     let god_name = god.to_str(lang);
     if hidden.is_empty() {
@@ -67,10 +73,10 @@ fn format_stem_gods(stem: Stem, god: TenGod, hidden: &[(Stem, TenGod)], lang: &L
 
 fn print_pillar_gods(gods: &PillarGods, lang: &LunarLang) {
     let pillars = [
-        ("Year",  &gods.year),
+        ("Year", &gods.year),
         ("Month", &gods.month),
-        ("Day",   &gods.day),
-        ("Hour",  &gods.hour),
+        ("Day", &gods.day),
+        ("Hour", &gods.hour),
     ];
     for (label, p) in &pillars {
         let line = format_stem_gods(p.stem, p.stem_god, &p.hidden_gods, lang);
@@ -80,10 +86,10 @@ fn print_pillar_gods(gods: &PillarGods, lang: &LunarLang) {
 
 fn print_nayin(gods: &PillarGods, lang: &LunarLang) {
     let nayins = [
-        ("Year",  gods.year.stem,  gods.year.branch),
+        ("Year", gods.year.stem, gods.year.branch),
         ("Month", gods.month.stem, gods.month.branch),
-        ("Day",   gods.day.stem,   gods.day.branch),
-        ("Hour",  gods.hour.stem,  gods.hour.branch),
+        ("Day", gods.day.stem, gods.day.branch),
+        ("Hour", gods.hour.stem, gods.hour.branch),
     ];
     let parts: Vec<String> = nayins
         .iter()
@@ -109,6 +115,37 @@ fn main() {
 
             let r = LunisDateTime::from_rfc3339(&input_string.trim()).unwrap();
             print_datetime(&r, &fmt);
+        }
+        Commands::Judge { fmt, born, target } => {
+            let master = LunisDateTime::from_rfc3339(&born.trim()).unwrap();
+            let target_dt = match target {
+                Some(t) => LunisDateTime::from_rfc3339(&t.trim()).unwrap(),
+                None => LunisDateTime::now().unwrap(),
+            };
+            let rating = auspicious::evaluate(master, target_dt, &fmt.lang);
+            match fmt.output {
+                OutputMode::Default => {
+                    println!("Rating: {} ({}/100)", rating.label, rating.score);
+                    println!("{}", rating.detail);
+                }
+                OutputMode::Waybar => {
+                    let text = target_dt.format_string(&fmt.format, &fmt.lang);
+                    let alt = format!("{} ({}/100)", rating.label, rating.score);
+                    let tooltip_fmt = fmt
+                        .tooltip_format
+                        .clone()
+                        .unwrap_or_else(|| DEFAULT_TOOLTIP_FMT.to_string());
+                    let tooltip_date = target_dt.format_string(&tooltip_fmt, &fmt.lang);
+                    let tooltip = format!("{}\n{}\n{}", tooltip_date, alt, rating.detail);
+                    let output = WaybarOutput {
+                        text,
+                        alt,
+                        tooltip,
+                        class: Some("lunis-judge".to_string()),
+                    };
+                    println!("{}", serde_json::to_string(&output).unwrap());
+                }
+            }
         }
         Commands::Relation(relation_args) => {
             let master = LunisDateTime::from_rfc3339(relation_args.master.trim()).unwrap();
@@ -138,13 +175,23 @@ fn main() {
                 let god_desc = pt.stem_god.describe(lang);
                 match relation_args.fmt.output {
                     OutputMode::Default => {
-                        println!("{}: {}  | {} ({}) ({})", god_name, god_desc, nayin_name, element_name, pt.stem.to_str(lang));
+                        println!(
+                            "{}: {}  | {} ({}) ({})",
+                            god_name,
+                            god_desc,
+                            nayin_name,
+                            element_name,
+                            pt.stem.to_str(lang)
+                        );
                     }
                     OutputMode::Waybar => {
                         let output = WaybarOutput {
                             text: god_name.to_string(),
                             alt: god_name.to_string(),
-                            tooltip: format!("{}: {}  | {} ({})", god_name, god_desc, nayin_name, element_name),
+                            tooltip: format!(
+                                "{}: {}  | {} ({})",
+                                god_name, god_desc, nayin_name, element_name
+                            ),
                             class: Some("lunis".to_string()),
                         };
                         println!("{}", serde_json::to_string(&output).unwrap());

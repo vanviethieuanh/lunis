@@ -87,6 +87,30 @@ tasks:
     cmds:
       - cargo install --path .
 
+  judge:
+    desc: "Judge if a day is good/bad based on birth date (usage: task judge -- 1990-01-15T00:00:00+07:00)"
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis judge --born "{{.CLI_ARGS}}" -l vi
+
+  judge-waybar:
+    desc: "Judge a day as Waybar JSON (usage: task judge-waybar -- 1990-01-15T00:00:00+07:00)"
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis judge --born "{{.CLI_ARGS}}" -l vi -o waybar
+
+  judge-target:
+    desc: "Judge a specific target day (usage: task judge-target -- 1990-01-15T00:00:00+07:00 2026-06-25T00:00:00+07:00)"
+    deps:
+      - build
+    cmds:
+      - |
+        ./target/debug/lunis judge --born "{{index .CLI_ARGS 0}}" --target "{{index .CLI_ARGS 1}}" -l vi
+
   clean:
     desc: Clean build artifacts
     cmds:
