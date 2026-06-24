@@ -136,7 +136,37 @@ fn main() {
                         .clone()
                         .unwrap_or_else(|| DEFAULT_TOOLTIP_FMT.to_string());
                     let tooltip_date = target_dt.format_string(&tooltip_fmt, &fmt.lang);
-                    let tooltip = format!("{}\n{}\n{}", tooltip_date, alt, rating.detail);
+
+                    let best = auspicious::best_hours(master, target_dt, &fmt.lang);
+                    let hours_text = best
+                        .iter()
+                        .take(3)
+                        .map(|(b, r)| {
+                            let idx = *b as u32;
+                            let start = (idx * 2 + 23) % 24;
+                            let end = (start + 2) % 24;
+                            format!(
+                                "  {} {:02}:00-{:02}:00 - {} ({}/100)",
+                                b.to_str(&fmt.lang),
+                                start,
+                                end,
+                                r.label,
+                                r.score
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    let hours_header = match fmt.lang {
+                        LunarLang::Vi => "Giờ tốt nhất:",
+                        LunarLang::Zh => "最佳时辰:",
+                        LunarLang::Ko => "좋은 시진:",
+                        LunarLang::Jp => "最良の時辰:",
+                    };
+
+                    let tooltip = format!(
+                        "{}\n{}\n{}\n{}\n{}",
+                        tooltip_date, alt, rating.detail, hours_header, hours_text
+                    );
                     let output = WaybarOutput {
                         text,
                         alt,
