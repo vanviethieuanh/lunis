@@ -1,15 +1,18 @@
-.TH LUNIS 1 "2026-01-02" "Lunis CLI" "User Commands"
+.TH LUNIS 1 "2026-06-25" "Lunis CLI" "User Commands"
 .SH NAME
-lunis \- Lunar/sexagenary calendar converter
+lunis \- East Asian lunisolar calendar CLI
 
 .SH DESCRIPTION
-Converts a Gregorian date to the Chinese/Vietnamese/Japanese/Korean lunar calendar.
+Converts a Gregorian date to the Chinese/Vietnamese/Japanese/Korean lunisolar calendar.
+Computes the sexagenary cycle (stems, branches, yinyang, wuxing) for year, month, day,
+and hour pillars. Supports TenGod (十神) relationships, NaYin (纳音) attributes,
+hidden stems (藏干), and day auspiciousness scoring.
 
-The tool supports two modes:
+.SH COMMANDS
 
 .TP
 convert
-Reads a date from standard input in \fBRFC 3339\fP format, e.g., `2026-03-02T23:40:33+07:00`. 
+Reads a date from standard input in \fBRFC 3339\fP format, e.g., `2026-03-02T23:40:33+07:00`.
 You can pipe input like:
 
 .nf
@@ -25,19 +28,61 @@ $ lunis now -l zh -f "{y-s} {y-b} - {m-S} - {d-s} {d-b} | Giờ {h-b} - {ke}"
 .fi
 
 .TP
-Timezone handling
-The tool \fBignores the timezone\fP of the input date. All calculations are based solely on the provided datetime values, without conversion between zones.
+relation
+Check the TenGod (十神) interaction between two dates.
 
-.SH USAGE 
-lunis convert|now [OPTIONS]
+.nf
+$ lunis relation -l vi "2000-01-01T12:00:00+07:00" "2026-03-02T00:59:33+07:00"
+.fi
 
-.SH OPTIONS
+.TP
+judge
+Judge whether a day is auspicious based on your birth date.
+
+.nf
+$ lunis judge -l vi -b "2000-01-01T12:00:00+07:00"
+.fi
+
+.SH USAGE
+lunis <command> [OPTIONS]
+
+.SH GLOBAL OPTIONS
 .TP
 -l, --lang <LANG>
 Language for output: vi, zh, ko, jp
 .TP
 -f, --format <FORMAT>
-Format string for output (see below)
+Format string for output (see FORMAT STRING below)
+.TP
+-o, --output <MODE>
+Output mode: \fBdefault\fP (plain text) or \fBwaybar\fP (JSON for Waybar)
+.TP
+\-\-tooltip-format <FORMAT>
+Separate format string for the Waybar tooltip field
+
+.SH RELATION OPTIONS
+.TP
+-p, --pillar <PILLAR>
+Target pillar: year, month, day (default), hour
+.TP
+-a, --all
+Show all four pillars with hidden stems (overrides \fB--pillar\fP)
+.TP
+\-\-nayin
+Show NaYin (纳音) attribute for the target date
+
+.SH JUDGE OPTIONS
+.TP
+-b, --born <RFC3339>
+(Required) Birth date in RFC 3339 format
+.TP
+-t, --target <RFC3339>
+Target date to evaluate (defaults to current time)
+
+.SH TIMEZONE HANDLING
+The tool \fBignores the timezone\fP. All calculations are based solely on the
+provided datetime values, without conversion between zones.
+
 .SH FORMAT STRING
 Your format string supports placeholders:
 
@@ -47,7 +92,8 @@ Year: stem, branch, yinyang, wuxing, number
 
 .TP
 \{m-s\} / \{m-b\} / \{m-y\} / \{m-w\} / \{m-n\} / \{m-S\}
-Month: stem, branch, yinyang, wuxing, number, string (e.g., "Tháng Giêng", "闰三月")
+Month: stem, branch, yinyang, wuxing, number, localized string
+(e.g., "Tháng Giêng", "正月", "闰三月")
 
 .TP
 \{d-s\} / \{d-b\} / \{d-y\} / \{d-w\} / \{d-n\}
@@ -59,7 +105,7 @@ Hour: stem, branch, yinyang, wuxing, number (0–23)
 
 .TP
 \{ke\}
-15-minute ke of the hours (0–7)
+15-minute ke division (0–7)
 
 .SH EXAMPLES
 Convert a date with Vietnamese output:
@@ -69,7 +115,38 @@ $ echo "2026-03-02T23:40:33+07:00" | lunis convert -l vi -f "{y-s} {y-b} - {m-s}
 Bính Ngọ - Canh Dần (Tháng Giêng) - Ất Hợi | Giờ Tý - 2 khắc
 .fi
 
+Check TenGod relation in Chinese:
+
+.nf
+$ lunis relation -l zh "2000-01-01T12:00:00+07:00" "2026-03-02T00:59:33+07:00"
+.fi
+
+Show all four pillars with hidden stems:
+
+.nf
+$ lunis relation --all -l vi "2000-01-01T12:00:00+07:00" "2026-03-02T00:59:33+07:00"
+.fi
+
+Show NaYin attribute:
+
+.nf
+$ lunis relation --nayin -l zh "2000-01-01T12:00:00+07:00" "2026-03-02T00:59:33+07:00"
+.fi
+
+Judge day auspiciousness:
+
+.nf
+$ lunis judge -l vi -b "2000-01-01T12:00:00+07:00"
+.fi
+
+Waybar JSON output:
+
+.nf
+$ lunis now -o waybar -l vi
+.fi
+
 .SH SEE ALSO
 date(1), cal(1)
+
 .SH AUTHOR
 Văn Viết Hiếu Anh <29355962+vanviethieuanh@users.noreply.github.com>
